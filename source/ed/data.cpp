@@ -418,24 +418,28 @@ void Data::build_journey_pattern_points(){
     int stop_seq;
     for(types::VehicleJourney * vj : this->vehicle_journeys){
         stop_seq = 0;
+        std::sort(vj->stop_time_list.begin(), vj->stop_time_list.end(),
+                  [](const types::StopTime* a, const types::StopTime* b){return a->order < b->order;});
+
         for(types::StopTime * stop_time : vj->stop_time_list){
-            std::string journey_pattern_point_extcode = vj->journey_pattern->uri + ":" + stop_time->tmp_stop_point->uri+":"+boost::lexical_cast<std::string>(stop_seq);
-            auto journey_pattern_point_it = journey_pattern_point_map.find(journey_pattern_point_extcode);
-            types::JourneyPatternPoint * journey_pattern_point;
-            if(journey_pattern_point_it == journey_pattern_point_map.end()) {
-                journey_pattern_point = new types::JourneyPatternPoint();
-                journey_pattern_point->journey_pattern = vj->journey_pattern;
-                journey_pattern_point->journey_pattern->journey_pattern_point_list.push_back(journey_pattern_point);
-                journey_pattern_point->stop_point = stop_time->tmp_stop_point;
-                journey_pattern_point_map[journey_pattern_point_extcode] = journey_pattern_point;
-                journey_pattern_point->order = stop_seq;
-                journey_pattern_point->uri = journey_pattern_point_extcode;
-                this->journey_pattern_points.push_back(journey_pattern_point);
+            std::string jpp_extcode = vj->journey_pattern->uri + ":" + stop_time->tmp_stop_point->uri
+                    + ":"+boost::lexical_cast<std::string>(stop_seq);
+            auto jpp_it = journey_pattern_point_map.find(jpp_extcode);
+            types::JourneyPatternPoint * jpp;
+            if(jpp_it == journey_pattern_point_map.end()) {
+                jpp = new types::JourneyPatternPoint();
+                jpp->journey_pattern = vj->journey_pattern;
+                jpp->journey_pattern->journey_pattern_point_list.push_back(jpp);
+                jpp->stop_point = stop_time->tmp_stop_point;
+                journey_pattern_point_map[jpp_extcode] = jpp;
+                jpp->order = stop_seq;
+                jpp->uri = jpp_extcode;
+                this->journey_pattern_points.push_back(jpp);
             } else {
-                journey_pattern_point = journey_pattern_point_it->second;
+                jpp = jpp_it->second;
             }
             ++stop_seq;
-            stop_time->journey_pattern_point = journey_pattern_point;
+            stop_time->journey_pattern_point = jpp;
         }
     }
 
