@@ -101,25 +101,35 @@ void RAPTOR::apply_vj_extension(const Visitor& v, const bool global_pruning,
 
 template<typename Visitor>
 void RAPTOR::foot_path(const Visitor & v) {
+    const uint32_t hang_time = 120;
 
-    int last = 0;
-    const auto foot_path_list = v.clockwise() ? data.dataRaptor->foot_path_forward :
-                                                data.dataRaptor->foot_path_backward;
-    auto it = foot_path_list.begin();
     auto &working_labels = labels[count];
     // Since we don't stop on a journey_pattern_point we don't really care about
     // accessibility here, it'll be check in the public transport part
+    // First we set every jpp of a every sp to at most arrival time to the best jpp
+    // of this sp + a hang time
     for(const auto best_jpp : best_jpp_by_sp) {
         if(best_jpp == type::invalid_idx) {
             continue;
         }
         const type::StopPoint* stop_point = data.pt_data->journey_pattern_points[best_jpp]->stop_point;
-        DateTime best_arrival = working_labels[best_jpp].dt;
+        const DateTime best_arrival = working_labels[best_jpp].dt;
         // We mark all the journey pattern point of this stop point with its datetime + 2 minutes
-        const DateTime best_departure = v.combine(best_arrival, 120);
+        const DateTime best_departure = v.combine(best_arrival, hang_time);
         mark_all_jpp_of_sp(stop_point, best_departure, best_jpp, working_labels, v);
+    }
 
-        // Now we apply all the connections
+
+    //Then we find if we can arrive before with connections
+    int last = 0;
+    const auto foot_path_list = v.clockwise() ? data.dataRaptor->foot_path_forward :
+                                                data.dataRaptor->foot_path_backward;
+    auto it = foot_path_list.begin();
+    for(const auto best_jpp : best_jpp_by_sp) {
+        if(best_jpp == type::invalid_idx) {
+            continue;
+        }
+        const type::StopPoint* stop_point = data.pt_data->journey_pattern_points[best_jpp]->stop_point;
         const pair_int & index = (v.clockwise()) ? data.dataRaptor->footpath_index_forward[stop_point->idx] :
                                                  data.dataRaptor->footpath_index_backward[stop_point->idx];
         DateTime next = v.worst_datetime(),
@@ -129,8 +139,11 @@ void RAPTOR::foot_path(const Visitor & v) {
         for(; it != end; ++it) {
             const type::StopPointConnection* spc = *it;
             const auto destination = v.clockwise() ? spc->destination : spc->departure;
-            next = v.combine(previous, spc->duration); // ludo
-            mark_all_jpp_of_sp(destination, next, best_jpp, working_labels, v);
+            const auto dest_best_jpp = best_jpp_by_sp[destination->idx];
+            next = v.combine(previous, spc->duration);
+            if(dest_best_jpp == type::invalid_idx || v.comp(next, working_labels[dest_best_jpp].dt + hang_time)) {
+                mark_all_jpp_of_sp(destination, next, best_jpp, working_labels, v);
+            }
         }
         last = index.first + index.second;
     }
