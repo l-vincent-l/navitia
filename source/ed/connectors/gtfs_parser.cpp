@@ -850,12 +850,16 @@ void FrequenciesGtfsHandler::handle_line(Data&, const csv_row& row, bool) {
              continue;
         }
 
+        //we need to convert the stop times in UTC
+        int utc_offset = gtfs_data.tz.offset_by_vp[vj_it->second->validity_pattern];
+
         int begin = vj_it->second->stop_time_list.front()->arrival_time;
-        for(auto st_it = vj_it->second->stop_time_list.begin(); st_it != vj_it->second->stop_time_list.end(); ++st_it) {
-            (*st_it)->start_time = time_to_int(row[start_time_c]) + (*st_it)->arrival_time - begin;
-            (*st_it)->end_time = time_to_int(row[end_time_c]) + (*st_it)->arrival_time - begin;
-            (*st_it)->headway_secs = boost::lexical_cast<int>(row[headway_secs_c]);
-            (*st_it)->is_frequency = true;
+        for(auto st: vj_it->second->stop_time_list) {
+            st->start_time = to_utc(row[start_time_c], utc_offset) + st->arrival_time - begin;
+            st->end_time = to_utc(row[end_time_c], utc_offset) + st->arrival_time - begin;
+
+            st->headway_secs = boost::lexical_cast<int>(row[headway_secs_c]);
+            st->is_frequency = true;
         }
     }
 }
