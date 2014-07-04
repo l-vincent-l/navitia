@@ -34,6 +34,7 @@ www.navitia.io
 #include "routing/raptor_api.h"
 #include "ed/build_helper.h"
 #include "routing_api_test_data.h"
+#include "tests/utils_test.h"
 
 struct logger_initialized {
     logger_initialized()   { init_logger(); }
@@ -100,8 +101,8 @@ BOOST_AUTO_TEST_CASE(simple_journey) {
     auto st2 = section.stop_date_times(1);
     BOOST_CHECK_EQUAL(st1.stop_point().uri(), "stop_area:stop1");
     BOOST_CHECK_EQUAL(st2.stop_point().uri(), "stop_area:stop2");
-    BOOST_CHECK_EQUAL(st1.departure_date_time(), "20120614T081100");
-    BOOST_CHECK_EQUAL(st2.arrival_date_time(), "20120614T082000");
+    BOOST_CHECK_EQUAL(st1.departure_date_time(), navitia::test::to_posix_timestamp("20120614T081100"));
+    BOOST_CHECK_EQUAL(st2.arrival_date_time(), navitia::test::to_posix_timestamp("20120614T082000"));
 }
 
 BOOST_AUTO_TEST_CASE(journey_stay_in) {
@@ -371,8 +372,8 @@ BOOST_AUTO_TEST_CASE(journey_array){
     auto st2 = section.stop_date_times(1);
     BOOST_CHECK_EQUAL(st1.stop_point().uri(), "stop_area:stop1");
     BOOST_CHECK_EQUAL(st2.stop_point().uri(), "stop_area:stop2");
-    BOOST_CHECK_EQUAL(st1.departure_date_time(), "20120614T081100");
-    BOOST_CHECK_EQUAL(st2.arrival_date_time(), "20120614T082000");
+    BOOST_CHECK_EQUAL(st1.departure_date_time(), navitia::test::to_posix_timestamp("20120614T081100"));
+    BOOST_CHECK_EQUAL(st2.arrival_date_time(), navitia::test::to_posix_timestamp("20120614T082000"));
 
     journey = resp.journeys(1);
     BOOST_REQUIRE_EQUAL(journey.sections_size(), 1);
@@ -382,8 +383,8 @@ BOOST_AUTO_TEST_CASE(journey_array){
     st2 = section.stop_date_times(1);
     BOOST_CHECK_EQUAL(st1.stop_point().uri(), "stop_area:stop1");
     BOOST_CHECK_EQUAL(st2.stop_point().uri(), "stop_area:stop2");
-    BOOST_CHECK_EQUAL(st1.departure_date_time(), "20120614T091100");
-    BOOST_CHECK_EQUAL(st2.arrival_date_time(), "20120614T092000");
+    BOOST_CHECK_EQUAL(st1.departure_date_time(), navitia::test::to_posix_timestamp("20120614T091100"));
+    BOOST_CHECK_EQUAL(st2.arrival_date_time(), navitia::test::to_posix_timestamp("20120614T092000"));
 }
 
 
@@ -415,8 +416,8 @@ BOOST_FIXTURE_TEST_CASE(walking_test, streetnetworkmode_fixture<test_speed_provi
 
     BOOST_REQUIRE_EQUAL(resp.journeys_size(), 2); //1 direct path by date and 1 path with bus
     pbnavitia::Journey journey = resp.journeys(0);
-    BOOST_CHECK_EQUAL(journey.departure_date_time(), "20120614T080000");
-    BOOST_CHECK_EQUAL(journey.arrival_date_time(), "20120614T080510");
+    BOOST_CHECK_EQUAL(journey.departure_date_time(), navitia::test::to_posix_timestamp("20120614T080000"));
+    BOOST_CHECK_EQUAL(journey.arrival_date_time(), navitia::test::to_posix_timestamp("20120614T080510"));
 
     BOOST_REQUIRE_EQUAL(journey.sections_size(), 1);
     pbnavitia::Section section = journey.sections(0);

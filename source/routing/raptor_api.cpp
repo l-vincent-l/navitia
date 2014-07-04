@@ -75,7 +75,7 @@ pbnavitia::Response make_pathes(const std::vector<navitia::routing::Path>& paths
         //for each date time we add a direct street journey
         for(bt::ptime datetime : datetimes) {
             pbnavitia::Journey* pb_journey = pb_response.add_journeys();
-            pb_journey->set_requested_date_time(navitia::to_iso_string_no_fractional(datetime));
+            pb_journey->set_requested_date_time(navitia::to_posix_timestamp(datetime));
             pb_journey->set_duration(temp.duration.total_seconds());
 
             bt::ptime departure;
@@ -86,10 +86,10 @@ pbnavitia::Response make_pathes(const std::vector<navitia::routing::Path>& paths
             }
             fill_street_sections(enhanced_response, origin, temp, d, pb_journey, departure);
 
-            const auto str_departure = navitia::to_iso_string_no_fractional(departure);
-            const auto str_arrival = navitia::to_iso_string_no_fractional(departure + temp.duration.to_posix());
-            pb_journey->set_departure_date_time(str_departure);
-            pb_journey->set_arrival_date_time(str_arrival);
+            const auto int_departure = navitia::to_posix_timestamp(departure);
+            const auto int_arrival = navitia::to_posix_timestamp(departure + temp.duration.to_posix());
+            pb_journey->set_departure_date_time(int_departure);
+            pb_journey->set_arrival_date_time(int_arrival);
         }
     }
 
@@ -101,7 +101,7 @@ pbnavitia::Response make_pathes(const std::vector<navitia::routing::Path>& paths
         pbnavitia::Journey* pb_journey = pb_response.add_journeys();
 
         pb_journey->set_nb_transfers(path.nb_changes);
-        pb_journey->set_requested_date_time(navitia::to_iso_string_no_fractional(path.request_time));
+        pb_journey->set_requested_date_time(navitia::to_posix_timestamp(path.request_time));
 
         if (path.items.empty()) {
             continue;
@@ -186,9 +186,9 @@ pbnavitia::Response make_pathes(const std::vector<navitia::routing::Path>& paths
                         continue;
                     }
                     pbnavitia::StopDateTime* stop_time = pb_section->add_stop_date_times();
-                    auto arr_time = navitia::to_iso_string_no_fractional(item.arrivals[i]);
+                    auto arr_time = navitia::to_posix_timestamp(item.arrivals[i]);
                     stop_time->set_arrival_date_time(arr_time);
-                    auto dep_time = navitia::to_iso_string_no_fractional(item.departures[i]);
+                    auto dep_time = navitia::to_posix_timestamp(item.departures[i]);
                     stop_time->set_departure_date_time(dep_time);
                     const auto p_deptime = item.departures[i];
                     const auto p_arrtime = item.arrivals[i];
@@ -262,9 +262,9 @@ pbnavitia::Response make_pathes(const std::vector<navitia::routing::Path>& paths
                         now, action_period, show_codes);
                 pb_section->set_length(origin_sp->coord.distance_to(destination_sp->coord));
             }
-            auto dep_time = navitia::to_iso_string_no_fractional(item.departure);
+            auto dep_time = navitia::to_posix_timestamp(item.departure);
             pb_section->set_begin_date_time(dep_time);
-            auto arr_time = navitia::to_iso_string_no_fractional(item.arrival);
+            auto arr_time = navitia::to_posix_timestamp(item.arrival);
             pb_section->set_end_date_time(arr_time);
 
             if(departure_time == bt::pos_infin)
@@ -326,8 +326,8 @@ pbnavitia::Response make_pathes(const std::vector<navitia::routing::Path>& paths
             }
         }
 
-        const auto str_departure = navitia::to_iso_string_no_fractional(departure_time);
-        const auto str_arrival = navitia::to_iso_string_no_fractional(arrival_time);
+        const auto str_departure = navitia::to_posix_timestamp(departure_time);
+        const auto str_arrival = navitia::to_posix_timestamp(arrival_time);
         pb_journey->set_departure_date_time(str_departure);
         pb_journey->set_arrival_date_time(str_arrival);
         pb_journey->set_duration((arrival_time - departure_time).total_seconds());
@@ -582,9 +582,9 @@ pbnavitia::Response make_isochrone(RAPTOR &raptor,
 
             if(duration <= max_duration) {
                 auto pb_journey = response.add_journeys();
-                const auto str_departure = iso_string(label, raptor.data);
-                const auto str_arrival = iso_string(label, raptor.data);
-                const auto str_requested = iso_string(init_dt, raptor.data);
+                const auto str_departure = to_posix_timestamp(label, raptor.data);
+                const auto str_arrival = to_posix_timestamp(label, raptor.data);
+                const auto str_requested = to_posix_timestamp(init_dt, raptor.data);
                 pb_journey->set_arrival_date_time(str_arrival);
                 pb_journey->set_departure_date_time(str_departure);
                 pb_journey->set_requested_date_time(str_requested);
