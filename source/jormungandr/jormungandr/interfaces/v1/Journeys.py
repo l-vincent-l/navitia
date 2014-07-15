@@ -51,6 +51,7 @@ from jormungandr.interfaces.parsers import option_value
 from ResourceUri import ResourceUri, complete_links, update_journeys_status
 from functools import wraps
 from fields import DateTime
+from jormungandr.timezone import set_request_timezone
 from make_links import add_id_links, clean_links
 from errors import ManageError
 from jormungandr.interfaces.argument import ArgumentDoc
@@ -206,10 +207,8 @@ section = {
                         attribute="street_network.path_items"),
     "transfer_type": enum_type(),
     "stop_date_times": NonNullList(NonNullNested(stop_date_time)),
-    "departure_date_time": DateTime(attribute="begin_date_time",
-                                    timezone="origin.stop_area.timezone"),
-    "arrival_date_time": DateTime(attribute="end_date_time",
-                                  timezone="destination.stop_area.timezone"),
+    "departure_date_time": DateTime(attribute="begin_date_time"),
+    "arrival_date_time": DateTime(attribute="end_date_time"),
 }
 
 cost = {
@@ -226,8 +225,8 @@ fare = {
 journey = {
     'duration': fields.Integer(),
     'nb_transfers': fields.Integer(),
-    'departure_date_time': DateTime(timezone='origin.stop_area.timezone'),
-    'arrival_date_time': DateTime(timezone='destination.stop_area.timezone'),
+    'departure_date_time': DateTime(),
+    'arrival_date_time': DateTime(),
     'requested_date_time': DateTime(),
     'sections': NonNullList(NonNullNested(section)),
     'from': PbField(place, attribute='origin'),
@@ -245,6 +244,7 @@ ticket = {
     "cost": NonNullNested(cost),
     "links": TicketLinks(attribute="section_id")
 }
+
 journeys = {
     "journeys": NonNullList(NonNullNested(journey)),
     "error": PbField(error, attribute='error'),
@@ -630,6 +630,9 @@ class Journeys(ResourceUri):
             api = 'journeys'
         else:
             api = 'isochrone'
+
+        #we store the region in the 'g' object, which is local to a request
+        set_request_timezone(self.region)
 
         response = i_manager.dispatch(args, api, instance_name=self.region)
         return response
