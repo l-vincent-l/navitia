@@ -33,6 +33,7 @@ www.navitia.io
 #include <boost/program_options.hpp>
 #include "raptor.h"
 #include "routing/raptor_api.h"
+#include "tests/utils_test.h"
 
 namespace nr = navitia::routing;
 namespace nt = navitia::type;
@@ -55,7 +56,7 @@ namespace navitia { namespace cli {
             nt::Type_e destination_type = raptor.data.get_type_of_id(target);
             nt::EntryPoint origin(origin_type, start);
             nt::EntryPoint destination(destination_type, target);
-            pb::Response resp = make_response(raptor, origin, destination, {date},
+            pb::Response resp = make_response(raptor, origin, destination, {navitia::test::to_posix_timestamp(date)},
                     clockwise, navitia::type::AccessibiliteParams(), forbidden,
                     sn_worker, false, true);
 
