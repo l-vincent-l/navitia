@@ -44,7 +44,8 @@ RequestHandle::RequestHandle(const std::string& /*api*/, const std::string &requ
         auto ptime = boost::posix_time::from_iso_string(str_dt);
 
         if (! calendar_id) {
-            //if we have a calendar, we don't check the production period since we are only interested in the time, not the date
+            //we only have to check the production period if we do not have a calendar,
+            // since if we have one we are only interested in the time, not the date
             if(! data.meta->production_date.contains(ptime.date()) ) {
                 fill_pb_error(pbnavitia::Error::date_out_of_bounds, "date is out of bound",pb_response.mutable_error());
             } else if( !data.meta->production_date.contains((ptime + boost::posix_time::seconds(duration)).date()) ) {
