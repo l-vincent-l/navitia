@@ -881,11 +881,11 @@ void FrequenciesGtfsHandler::handle_line(Data&, const csv_row& row, bool) {
         int utc_offset = gtfs_data.tz.offset_by_vp[vj_it->second->validity_pattern];
 
         int begin = vj_it->second->stop_time_list.front()->arrival_time;
+		
+		vj_it->second->start_time = to_utc(row[start_time_c], utc_offset);
+        vj_it->second->end_time = to_utc(row[end_time_c], utc_offset);
+        vj_it->second->headway_secs = boost::lexical_cast<int>(row[headway_secs_c]);
         for(auto st: vj_it->second->stop_time_list) {
-            st->start_time = to_utc(row[start_time_c], utc_offset) + st->arrival_time - begin;
-            st->end_time = to_utc(row[end_time_c], utc_offset) + st->arrival_time - begin;
-
-            st->headway_secs = boost::lexical_cast<int>(row[headway_secs_c]);
             st->is_frequency = true;
         }
     }

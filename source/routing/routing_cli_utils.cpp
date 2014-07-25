@@ -37,26 +37,35 @@ www.navitia.io
 
 namespace nr = navitia::routing;
 namespace nt = navitia::type;
+namespace ntest = navitia::test;
 namespace bt = boost::posix_time;
 namespace po = boost::program_options ;
 namespace pb = pbnavitia;
 
 namespace navitia { namespace cli {
 
-        bool compute_options::compute(const boost::program_options::variables_map& vm,
-                nr::RAPTOR& raptor) {
+        void compute_options::load(const std::string& file) {
+            {
+                Timer t("Loading datafile : " + file);
+                data.load(file);
+            }
+            data.build_raptor();
+            raptor = std::unique_ptr<nr::RAPTOR>(new nr::RAPTOR(data));
+        }
+
+        bool compute_options::compute() {
             std::vector<std::string> forbidden;
             if (vm.count("start") == 0 || vm.count("target") == 0 || vm.count("date") == 0) {
                 return false;
             }
             bool clockwise = !vm.count("counterclockwise");
-            navitia::georef::StreetNetwork sn_worker(*raptor.data.geo_ref);
+            navitia::georef::StreetNetwork sn_worker(*raptor->data.geo_ref);
             
-            nt::Type_e origin_type = raptor.data.get_type_of_id(start);
-            nt::Type_e destination_type = raptor.data.get_type_of_id(target);
+            nt::Type_e origin_type = raptor->data.get_type_of_id(start);
+            nt::Type_e destination_type = raptor->data.get_type_of_id(target);
             nt::EntryPoint origin(origin_type, start);
             nt::EntryPoint destination(destination_type, target);
-            pb::Response resp = make_response(raptor, origin, destination, {navitia::test::to_posix_timestamp(date)},
+            pb::Response resp = make_response(*raptor, origin, destination, {ntest::to_posix_timestamp(date)},
                     clockwise, navitia::type::AccessibiliteParams(), forbidden,
                     sn_worker, false, true);
 

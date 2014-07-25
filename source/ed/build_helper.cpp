@@ -36,28 +36,48 @@ namespace pt = boost::posix_time;
 namespace ed {
 
 VJ & VJ::frequency(uint32_t start_time, uint32_t end_time, uint32_t headway_secs) {
-    navitia::type::StopTime* first_st = vj->stop_time_list.front();
+    vj->start_time = start_time;
+
     size_t nb_trips = std::ceil((end_time - start_time)/headway_secs);
+    vj->end_time = start_time + ( nb_trips * headway_secs );
+    vj->headway_secs = headway_secs;
+
+    navitia::type::StopTime* first_st = vj->stop_time_list.front();
+    uint32_t begin = first_st->arrival_time;
     for(navitia::type::StopTime* st : vj->stop_time_list) {
         st->set_is_frequency(true);
-        st->start_time = start_time+(st->arrival_time - first_st->arrival_time);
-        st->end_time = start_time + nb_trips * headway_secs + (st->departure_time - first_st->departure_time);
-        st->headway_secs = headway_secs;
+        //For frequency based trips, make arrival and departure time relative from the first stop.
+        if (begin > 0){
+            st->arrival_time -= begin;
+            st->departure_time -= begin;
+        }
     }
     return *this;
 }
 
+nt::MetaVehicleJourney* get_or_create_metavj(builder& b, const std::string name) {
+    auto it = b.data->pt_data->meta_vj.find(name);
+
+    if (it == b.data->pt_data->meta_vj.end()) {
+        auto mvj = new nt::MetaVehicleJourney;
+        b.data->pt_data->meta_vj.insert({name, mvj});
+        return mvj;
+    }
+    return it->second;
+}
 
 VJ::VJ(builder & b, const std::string &line_name, const std::string &validity_pattern, const std::string &/*block_id*/, bool wheelchair_boarding, const std::string& uri, std::string meta_vj_name) : b(b){
     vj = new navitia::type::VehicleJourney();
 
     //if we have a meta_vj, we add it in that
+    nt::MetaVehicleJourney* mvj;
     if (! meta_vj_name.empty()) {
-        b.data->pt_data->meta_vj[meta_vj_name].theoric_vj.push_back(vj);
+        mvj = get_or_create_metavj(b, meta_vj_name);
     } else {
-        b.data->pt_data->meta_vj[uri].theoric_vj.push_back(vj); //we add a meta vj around this vj
+        mvj = get_or_create_metavj(b, uri);
     }
-
+    mvj->theoric_vj.push_back(vj);
+    vj->meta_vj = mvj;
 
     vj->idx = b.data->pt_data->vehicle_journeys.size();
     b.data->pt_data->vehicle_journeys.push_back(vj);
@@ -73,6 +93,7 @@ VJ::VJ(builder & b, const std::string &line_name, const std::string &validity_pa
         b.data->pt_data->lines.push_back(line);
         navitia::type::Route* route = new navitia::type::Route();
         route->idx = b.data->pt_data->routes.size();
+        route->name = line->name;
         route->uri = line_name + ":" + std::to_string(b.data->pt_data->routes.size());
         b.data->pt_data->routes.push_back(route);
         line->route_list.push_back(route);
@@ -396,5 +417,29 @@ void builder::connection(const std::string & name1, const std::string & name2, f
             vj->stop_time_list.back()->set_pick_up_allowed(false);
          }
      }
+ }
+
+/*
+1. Initilise the first admin in the list to all stop_area and way
+2. Used for the autocomplete functional tests.
+*/
+ void builder::manage_admin() {
+     if (!data->geo_ref->admins.empty()) {
+         navitia::georef::Admin * admin = data->geo_ref->admins[0];
+        for(navitia::type::StopArea* sa : data->pt_data->stop_areas){
+            sa->admin_list.clear();
+            sa->admin_list.push_back(admin);
+        }
+
+        for(navitia::georef::Way * way : data->geo_ref->ways) {
+            way->admin_list.clear();
+            way->admin_list.push_back(admin);
+        }
+     }
+ }
+
+ void builder::build_autocomplete() {
+    data->pt_data->build_autocomplete(*(data->geo_ref));
+    data->geo_ref->build_autocomplete_list();
  }
 }

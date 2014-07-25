@@ -28,35 +28,23 @@ https://groups.google.com/d/forum/navitia
 www.navitia.io
 */
 
-#pragma once
-#include <boost/program_options.hpp>
-#include "raptor.h"
-#include "routing/raptor_api.h"
+#include "utils/init.h"
+#include "time_tables/tests/departure_board_test_data.h"
+#include "mock_kraken.h"
 
-namespace nr = navitia::routing;
-namespace po = boost::program_options ;
-namespace pb = pbnavitia;
 
-namespace navitia { namespace cli {
+/*
+ * tests for departure board.
+ *
+ * roughly the same tests as in departure_board_test.cpp but after jormungandr
+ */
+int main() {
+    navitia::init_app();
 
-    struct compute_options {
-        po::options_description desc;
-        std::string start, target, date;
-        po::variables_map vm;
-        std::unique_ptr<nr::RAPTOR> raptor;
-        nt::Data data;
+    calendar_fixture data_set;
 
-        compute_options() : desc("Simple journey computation"){
-            desc.add_options()
-            ("start,s", po::value<std::string>(&start), "uri of point to start")
-            ("target,t", po::value<std::string>(&target), "uri of point to end")
-            ("date,d", po::value<std::string>(&date), "yyyymmddThhmmss")
-            ("counterclockwise,c", "Counter-clockwise search")
-            ("protobuf,p", "Full-output");
-        }
-        bool compute();
-        void load(const std::string &file);
-        private:
-        void show_section(const pbnavitia::Section& section);
-    };
-}}
+    mock_kraken kraken(data_set.b, "departure_board_test");
+
+    return 0;
+}
+
