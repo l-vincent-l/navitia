@@ -135,7 +135,7 @@ pbnavitia::Response make_pathes(const std::vector<navitia::routing::Path>& paths
                     first_section->set_duration(duration.total_seconds());
                     first_section->mutable_street_network()->set_mode(convert(origin.streetnetwork_params.mode));
                     departure_time = path.items.front().departures.front() - duration.to_posix();
-                    first_section->set_begin_date_time(navitia::to_iso_string_no_fractional(departure_time));
+                    first_section->set_begin_date_time(navitia::to_posix_timestamp(departure_time));
                 }
             }
 
@@ -157,8 +157,8 @@ pbnavitia::Response make_pathes(const std::vector<navitia::routing::Path>& paths
                     fill_street_sections(enhanced_response, origin, temp, d, pb_journey,
                         departure_time);
                     auto section = pb_journey->mutable_sections(pb_journey->mutable_sections()->size()-1);
-                    bt::time_period action_period(boost::posix_time::from_iso_string(section->begin_date_time()),
-                                                  boost::posix_time::from_iso_string(section->end_date_time()));
+                    bt::time_period action_period(navitia::from_posix_timestamp(section->begin_date_time()),
+                                                  navitia::from_posix_timestamp(section->end_date_time()));
                     // We add coherence with the origin of the request
                     fill_pb_placemark(origin, d, section->mutable_origin(), 2, now, action_period, show_codes);
                     // We add coherence with the first pt section
@@ -293,7 +293,7 @@ pbnavitia::Response make_pathes(const std::vector<navitia::routing::Path>& paths
                     last_section->set_duration(duration.total_seconds());
                     last_section->mutable_street_network()->set_mode(convert(destination.streetnetwork_params.mode));
                     arrival_time = path.items.back().departures.back() + duration.to_posix();
-                    last_section->set_end_date_time(navitia::to_iso_string_no_fractional(arrival_time));
+                    last_section->set_end_date_time(navitia::to_posix_timestamp(arrival_time));
                 }
             }
         } else {
@@ -317,8 +317,8 @@ pbnavitia::Response make_pathes(const std::vector<navitia::routing::Path>& paths
                     }
                     // We add coherence with the last pt section
                     auto section = pb_journey->mutable_sections(pb_journey->mutable_sections()->size()-1);
-                    bt::time_period action_period(boost::posix_time::from_iso_string(section->begin_date_time()),
-                                                  boost::posix_time::from_iso_string(section->end_date_time()));
+                    bt::time_period action_period(navitia::from_posix_timestamp(section->begin_date_time()),
+                                                  navitia::from_posix_timestamp(section->end_date_time()));
                     fill_pb_placemark(arrival_stop_point, d, section->mutable_origin(), 2, now, action_period, show_codes);
                     //We add coherence with the destination object of the request
                     fill_pb_placemark(destination, d, section->mutable_destination(), 2, now, action_period, show_codes);
