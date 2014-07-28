@@ -51,6 +51,22 @@ def date_to_timestamp(date):
     return int(calendar.timegm(date.timetuple()))
 
 class ResourceUtc:
+    def __init__(self):
+        self._tz = None
+
+    def tz(self):
+        if not self._tz:
+            instance = i_manager.instances[self.region]
+
+            tz_name = instance.timezone  # TODO store directly the tz?
+
+            if not tz_name:
+                logging.Logger(__name__).warn("unkown timezone for region {}"
+                                              .format(self.region))
+                return original_datetime
+            self._tz = (pytz.timezone(tz_name),)
+        return self._tz[0]
+
     def convert_to_utc(self, original_datetime):
         """
         convert the original_datetime in the args to UTC
@@ -67,20 +83,11 @@ class ResourceUtc:
         and fetch the tz of this point.
         we'll have to store the tz for stop area and the coord for admin, poi, ...
         """
-        instance = i_manager.instances[self.region]
 
-        tz_name = instance.timezone  # TODO store directly the tz?
-
-        if not tz_name:
-            logging.Logger(__name__).warn("unkown timezone for region {}"
-                                          .format(self.region))
-            return original_datetime
-        tz = pytz.timezone(tz_name)
-
-        if not tz:
+        if self.tz() is None:
             return original_datetime
 
-        utctime = tz.normalize(tz.localize(original_datetime)).astimezone(pytz.utc)
+        utctime = self.tz().normalize(self.tz().localize(original_datetime)).astimezone(pytz.utc)
 
         return utctime
 
