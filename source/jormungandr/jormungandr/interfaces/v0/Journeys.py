@@ -165,11 +165,11 @@ class Journeys(Resource, ResourceUtc, FindAndFormatJourneys):
         args['datetime'] = date_to_timestamp(new_datetime)
         
         response = i_manager.dispatch(args, "journeys", instance_name=region)
-        #if response.journeys:
-        #    (before, after) = extremes(response, request)
-        #    if before and after:
-        #        response.prev = before
-        #        response.next = after
+        if response.journeys:
+            (before, after) = extremes(response, request)
+            if before and after:
+                response.prev = self.format(before)
+                response.next = self.format(after)
 
         return self.find_and_transform_datetimes(protobuf_to_dict(response, use_enum_labels=True)), 200
 
@@ -221,9 +221,9 @@ class Isochrone(Resource, ResourceUtc, FindAndFormatJourneys):
         args["max_nb_journeys"] = None
         args["show_codes"] = False
         response = i_manager.dispatch(args, "isochrone", instance_name=self.region)
-        #if response.journeys:
-        #    (before, after) = extremes(response, request)
-        #    if before and after:
-        #        response.prev = before
-        #        response.next = after
+        if response.journeys:
+            (before, after) = extremes(response, request)
+            if before and after:
+                response.prev = self.format(before)
+                response.next = self.format(after)
         return self.find_and_transform_datetimes(protobuf_to_dict(response, use_enum_labels=True)), 200
