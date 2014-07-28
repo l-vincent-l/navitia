@@ -51,7 +51,7 @@ class FindAndFormatJourneys():
     def find_and_transform_datetimes(self, response):
         if not 'journeys' in response or len(response['journeys']) == 0:
             return response
-        for i_journey in range(0, len(response['journeys'])-1):
+        for i_journey in range(0, len(response['journeys'])):
             journey = response['journeys'][i_journey]
             if "arrival_date_time" in journey:
                 journey['arrival_date_time'] = self.format(journey['arrival_date_time'])
@@ -61,7 +61,7 @@ class FindAndFormatJourneys():
                 journey['requested_date_time'] = self.format(journey['requested_date_time'])
             if not "sections" in journey:
                 continue
-            for i_section in range(0, len(journey['sections'])-1):
+            for i_section in range(0, len(journey['sections'])):
                 section = journey['sections'][i_section]
                 if "end_date_time" in section:
                     section['end_date_time'] = self.format(section['end_date_time'])
@@ -69,7 +69,7 @@ class FindAndFormatJourneys():
                     section['begin_date_time'] = self.format(section['begin_date_time'])
                     if not "stop_date_times" in section:
                         continue
-                    for i_st in range(0, len(section['stop_date_times'])-1):
+                    for i_st in range(0, len(section['stop_date_times'])):
                         st = section['stop_date_times'][i_st]
                         if "arrival_date_time" in journey:
                             st['arrival_date_time'] = self.format(st['arrival_date_time'])
