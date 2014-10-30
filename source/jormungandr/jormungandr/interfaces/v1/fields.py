@@ -563,4 +563,3 @@ instance_status = {
         "start_production_date": fields.String(),
         "status": fields.String()
     }
-
