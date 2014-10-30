@@ -45,21 +45,10 @@ makePathes(const std::vector<std::pair<type::idx_t, navitia::time_duration> > &d
     std::vector<Path> result;
     auto solutions = get_solutions(departures, destinations, !clockwise, accessibilite_params, disruption_active, raptor_);
     for(Solution solution : solutions) {
-        result.push_back(makePath(solution.jpp_idx, solution.count, clockwise, disruption_active, accessibilite_params, raptor_));
+        result.push_back(makePath(solution.stop_point_idx, solution.count, clockwise, disruption_active, accessibilite_params, raptor_));
     }
 
     return result;
-}
-
-std::pair<const type::StopTime*, uint32_t>
-get_current_stidx_gap(size_t count, type::idx_t journey_pattern_point, const std::vector<label_vector_t> &labels,
-                      const type::AccessibiliteParams & accessibilite_params, bool clockwise,  const navitia::type::Data &data, bool disruption_active) {
-    const auto& label = labels[count][journey_pattern_point];
-    if(label.pt_is_initialized()) {
-        const type::JourneyPatternPoint* jpp = data.pt_data->journey_pattern_points[journey_pattern_point];
-        return best_stop_time(jpp, label.dt_pt, accessibilite_params.vehicle_properties, clockwise, disruption_active, data, true);
-    }
-    return std::make_pair(nullptr, std::numeric_limits<uint32_t>::max());
 }
 
 Path

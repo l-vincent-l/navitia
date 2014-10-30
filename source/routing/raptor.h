@@ -162,7 +162,7 @@ struct RAPTOR
 
     template<typename Visitor>
     void apply_vj_extension(const Visitor& v, const bool global_pruning,
-                            const type::VehicleJourney* prev_vj, type::idx_t boarding_jpp_idx,
+                            const type::VehicleJourney* prev_vj, const type::StopTime* boarding_st,
                             DateTime workingDt, const uint16_t l_zone,
                             const bool disruption_active);
 
@@ -177,7 +177,7 @@ struct RAPTOR
     /// Retourne -1 s'il n'existe pas de meilleure solution
     int best_round(type::idx_t journey_pattern_point_idx);
 
-    template<typename Visitor>
+    /*template<typename Visitor>
     inline
     void mark_all_jpp_of_sp(const type::StopPoint* stop_point, const DateTime dt, const type::idx_t boarding_jpp,
                             label_vector_t& working_labels, Visitor visitor) {
@@ -192,7 +192,7 @@ struct RAPTOR
                }
             }
         }
-    }
+    }*/
 
     ~RAPTOR() {}
 };

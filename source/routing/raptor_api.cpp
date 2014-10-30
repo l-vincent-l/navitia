@@ -744,9 +744,9 @@ pbnavitia::Response make_isochrone(RAPTOR &raptor,
 
         if(best_jpp != type::invalid_idx) {
             auto label = raptor.best_labels[best_jpp];
-            type::idx_t initial_jpp;
+            type::idx_t initial_stop_point_idx;
             DateTime initial_dt;
-            boost::tie(initial_jpp, initial_dt) = get_final_jppidx_and_date(best_round,
+            boost::tie(initial_stop_point_idx, initial_dt) = get_final_stop_point_idx_and_date(best_round,
                     best_jpp, !clockwise, disruption_active, accessibilite_params, raptor);
 
             int duration = ::abs(label - init_dt);

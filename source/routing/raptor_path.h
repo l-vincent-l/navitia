@@ -56,11 +56,6 @@ namespace navitia { namespace routing {
     /// Ajuste les temps d’attente
     void patch_datetimes(Path &path);
 
-    std::pair<const type::StopTime*, uint32_t>
-    get_current_stidx_gap(size_t count, type::idx_t journey_pattern_point, const std::vector<label_vector_t> &labels,
-                          const type::AccessibiliteParams & accessibilite_params, bool clockwise,
-                          const navitia::type::Data &data, bool disruption_active);
-
     template<typename Visitor>
     void read_path(Visitor& v, type::idx_t destination_idx, size_t countb, bool clockwise, bool disruption_active,
               const type::AccessibiliteParams & accessibilite_params, const RAPTOR &raptor_);

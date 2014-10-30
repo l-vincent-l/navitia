@@ -40,18 +40,19 @@ namespace navitia { namespace routing {
 struct Label {
     DateTime dt_pt, // At what time can we reach this label with public transport
              dt_transfer; // At what time wan we reach this label with a transfer
-    navitia::type::idx_t boarding_jpp_pt = type::invalid_idx,
-                         boarding_jpp_transfer = type::invalid_idx;
+    type::idx_t boarding_stop_point_transfer = type::invalid_idx;
+    const type::StopTime* st = nullptr,
+                  * st_boarding = nullptr;
 
     void init(bool clockwise) {
-        boarding_jpp_pt = type::invalid_idx;
-        boarding_jpp_transfer = type::invalid_idx;
+        st_boarding = nullptr;
+        boarding_stop_point_transfer = type::invalid_idx;
         dt_pt = clockwise ? DateTimeUtils::inf : DateTimeUtils::min;
         dt_transfer = dt_pt;
     }
 
     inline bool pt_is_initialized() const {
-        return dt_pt != DateTimeUtils::inf && dt_pt != DateTimeUtils::min;
+        return st;
     }
 
     inline bool transfer_is_initialized() const {
@@ -79,39 +80,39 @@ inline void memset32(T*buf, uint n, T c)
 
 
 struct best_dest {
-    std::vector<navitia::time_duration> jpp_idx_duration;
+    std::vector<navitia::time_duration> stop_point_idx_duration;
     DateTime best_now;
-    type::idx_t best_now_jpp_idx;
+    type::idx_t best_now_stop_point_idx;
     size_t count;
 
-    void add_destination(const type::JourneyPatternPoint* jpp, const time_duration duration_to_dest) {
-        jpp_idx_duration[jpp->idx] = duration_to_dest; //AD, check if there are some rounding problems
+    void add_destination(const type::StopPoint* stop_point, const time_duration duration_to_dest) {
+        stop_point_idx_duration[stop_point->idx] = duration_to_dest; //AD, check if there are some rounding problems
     }
 
 
-    inline bool is_eligible_solution(const type::idx_t jpp_idx) const {
-        return jpp_idx_duration[jpp_idx] != boost::posix_time::pos_infin;
+    inline bool is_eligible_solution(const type::idx_t stop_point_idx) const {
+        return stop_point_idx_duration[stop_point_idx] != boost::posix_time::pos_infin;
     }
 
 
     template<typename Visitor>
-    inline bool add_best(const Visitor & v, type::idx_t jpp_idx, const DateTime &t, size_t cnt) {
-        if(is_eligible_solution(jpp_idx)) {
+    inline bool add_best(const Visitor & v, type::idx_t stop_point_idx, const DateTime &t, size_t cnt) {
+        if(is_eligible_solution(stop_point_idx)) {
             if(v.clockwise())
-                return add_best_clockwise(jpp_idx, t, cnt);
+                return add_best_clockwise(stop_point_idx, t, cnt);
             else
-                return add_best_unclockwise(jpp_idx, t, cnt);
+                return add_best_unclockwise(stop_point_idx, t, cnt);
         }
         return false;
     }
 
 
-    inline bool add_best_clockwise(type::idx_t jpp_idx, const DateTime &t, size_t cnt) {
+    inline bool add_best_clockwise(type::idx_t stop_point_idx, const DateTime &t, size_t cnt) {
         if(t != DateTimeUtils ::inf) {
-            const auto tmp_dt = t + jpp_idx_duration[jpp_idx];
+            const auto tmp_dt = t + stop_point_idx_duration[stop_point_idx];
             if((tmp_dt < best_now) || ((tmp_dt == best_now) && (count > cnt))) {
                 best_now = tmp_dt;
-                best_now_jpp_idx = jpp_idx;
+                best_now_stop_point_idx = stop_point_idx;
                 count = cnt;
                 return true;
             }
@@ -120,12 +121,12 @@ struct best_dest {
         return false;
     }
 
-    inline bool add_best_unclockwise(type::idx_t jpp_idx, const DateTime &t, size_t cnt) {
+    inline bool add_best_unclockwise(type::idx_t stop_point_idx, const DateTime &t, size_t cnt) {
         if(t != DateTimeUtils::min) {
-            const auto tmp_dt = t - jpp_idx_duration[jpp_idx];
+            const auto tmp_dt = t - stop_point_idx_duration[stop_point_idx];
             if((tmp_dt > best_now) || ((tmp_dt == best_now) && (count > cnt))) {
                 best_now = tmp_dt;
-                best_now_jpp_idx = jpp_idx;
+                best_now_stop_point_idx = stop_point_idx;
                 count = cnt;
                 return true;
             }
@@ -133,16 +134,16 @@ struct best_dest {
         return false;
     }
 
-    void reinit(const size_t nb_jpp_idx) {
-        jpp_idx_duration.resize(nb_jpp_idx);
-        memset32<navitia::time_duration>(&jpp_idx_duration[0], nb_jpp_idx, boost::posix_time::pos_infin);
+    void reinit(const size_t nb_stop_point_idx) {
+        stop_point_idx_duration.resize(nb_stop_point_idx);
+        memset32<navitia::time_duration>(&stop_point_idx_duration[0], nb_stop_point_idx, boost::posix_time::pos_infin);
         best_now = DateTimeUtils::inf;
-        best_now_jpp_idx = type::invalid_idx;
+        best_now_stop_point_idx = type::invalid_idx;
         count = std::numeric_limits<size_t>::max();
     }
 
-    void reinit(size_t nb_jpp_idx, const DateTime &borne) {
-        reinit(nb_jpp_idx);
+    void reinit(size_t nb_stop_point_idx, const DateTime &borne) {
+        reinit(nb_stop_point_idx);
         best_now = borne;
     }
 

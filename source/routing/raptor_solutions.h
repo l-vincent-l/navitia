@@ -42,13 +42,13 @@ namespace navitia { namespace routing {
 struct RAPTOR;
 
 struct Solution {
-    type::idx_t jpp_idx;
+    type::idx_t stop_point_idx = type::invalid_idx;
     uint32_t count;
     DateTime arrival, upper_bound, total_arrival;
     float ratio;
     navitia::time_duration walking_time = {};
 
-    Solution() : jpp_idx(type::invalid_idx), count(0),
+    Solution() : stop_point_idx(type::invalid_idx), count(0),
                        arrival(DateTimeUtils::inf), upper_bound(DateTimeUtils::inf),
                        ratio(std::numeric_limits<float>::min()) {}
 
@@ -59,8 +59,8 @@ struct Solution {
         if(this->count != s.count) {
             return this->count < s.count;
         }
-        if (this->jpp_idx != s.jpp_idx) {
-            return this->jpp_idx < s.jpp_idx;
+        if (this->stop_point_idx != s.stop_point_idx) {
+            return this->stop_point_idx < s.stop_point_idx;
         }
         if(this->upper_bound != s.upper_bound) {
             return this->upper_bound < s.upper_bound;
@@ -70,8 +70,8 @@ struct Solution {
         }
         return this->ratio < s.ratio;
     }
-
 };
+
 typedef std::set<Solution> Solutions;
 
 Solutions
@@ -97,10 +97,10 @@ get_pareto_front(bool clockwise, const std::vector<std::pair<type::idx_t, naviti
                const type::AccessibiliteParams & accessibilite_params, bool disruption_active, const RAPTOR& raptor);
 
 std::pair<type::idx_t, DateTime>
-get_final_jppidx_and_date(int count, type::idx_t jpp_idx, bool clockwise, bool disruption_active, const type::AccessibiliteParams &accessibilite_params, const navitia::routing::RAPTOR &raptor);
+get_final_stop_point_idx_and_date(int count, type::idx_t stop_point_idx, bool clockwise, bool disruption_active, const type::AccessibiliteParams &accessibilite_params, const navitia::routing::RAPTOR &raptor);
 
 navitia::time_duration
-getWalkingTime(int count, type::idx_t jpp_idx, const std::vector<std::pair<type::idx_t, navitia::time_duration> > &departs,
+getWalkingTime(int count, type::idx_t stop_point_idx, const std::vector<std::pair<type::idx_t, navitia::time_duration> > &departs,
                const std::vector<std::pair<type::idx_t, navitia::time_duration> > &destinations,
                bool clockwise, bool disruption_active, const type::AccessibiliteParams &accessibilite_params,
                const navitia::routing::RAPTOR &raptor);
