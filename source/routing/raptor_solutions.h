@@ -43,13 +43,14 @@ struct RAPTOR;
 
 struct Solution {
     type::idx_t stop_point_idx = type::invalid_idx;
-    uint32_t count;
+    uint32_t count = 0;
     DateTime arrival, upper_bound, total_arrival;
     float ratio;
     navitia::time_duration walking_time = {};
 
     Solution() : stop_point_idx(type::invalid_idx), count(0),
                        arrival(DateTimeUtils::inf), upper_bound(DateTimeUtils::inf),
+                       total_arrival(DateTimeUtils::inf),
                        ratio(std::numeric_limits<float>::min()) {}
 
     bool operator<(const Solution& s) const {

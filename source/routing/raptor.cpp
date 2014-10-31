@@ -90,7 +90,7 @@ void RAPTOR::apply_vj_extension(const Visitor& v, const bool global_pruning,
                 continue;
             }
             working_labels[stop_point_idx].dt_pt = workingDt;
-            working_labels[stop_point_idx].st_boarding = boarding_st;
+            working_labels[stop_point_idx].boarding_jpp_pt = boarding_st->journey_pattern_point->idx;
             working_labels[stop_point_idx].st = st;
             best_label_sp = workingDt;
             this->b_dest.add_best(v, stop_point_idx, workingDt, count);
@@ -109,7 +109,9 @@ void RAPTOR::apply_vj_extension(const Visitor& v, const bool global_pruning,
 
 template<typename Visitor>
 void RAPTOR::foot_path(const Visitor & v) {
-
+    size_t nb_destination = 0,
+           nb_better = 0,
+           nb_marked = 0;
     int last = 0;
     const auto foot_path_list = v.clockwise() ? data.dataRaptor->foot_path_forward :
                                                 data.dataRaptor->foot_path_backward;
@@ -117,14 +119,14 @@ void RAPTOR::foot_path(const Visitor & v) {
     auto &working_labels = labels[count];
     // Since we don't stop on a journey_pattern_point we don't really care about
     // accessibility here, it'll be check in the public transport part
-    for(const auto stop_point : data.pt_data->stop_points) {
-        auto& working_label = working_labels[stop_point->idx];
+    for(size_t stop_point_idx = 0; stop_point_idx < data.pt_data->stop_points.size(); ++stop_point_idx) {
+        const auto& working_label = working_labels[stop_point_idx];
         if(!working_label.pt_is_initialized()) {
             continue;
         }
         // Now we apply all the connections
-        const pair_int & index = (v.clockwise()) ? data.dataRaptor->footpath_index_forward[stop_point->idx] :
-                                                 data.dataRaptor->footpath_index_backward[stop_point->idx];
+        const pair_int & index = (v.clockwise()) ? data.dataRaptor->footpath_index_forward[stop_point_idx] :
+                                                 data.dataRaptor->footpath_index_backward[stop_point_idx];
         it += index.first - last;
         const auto end = it + index.second;
         const auto best_jpp = working_label.st->journey_pattern_point;
@@ -132,14 +134,18 @@ void RAPTOR::foot_path(const Visitor & v) {
             const type::StopPointConnection* spc = *it;
             const auto destination = v.clockwise() ? spc->destination : spc->departure;
             const DateTime next = v.combine(working_label.dt_pt, spc->duration); // ludo
-            if(v.comp(next, working_labels[destination->idx].dt_transfer)) {
-               working_labels[destination->idx].dt_transfer = next;
-               working_labels[destination->idx].boarding_stop_point_transfer = stop_point->idx;
+            auto& destination_label = working_labels[destination->idx];
+            ++ nb_destination;
+            if(v.comp(next, destination_label.dt_transfer)) {
+                ++nb_better;
+               destination_label.dt_transfer = next;
+               destination_label.boarding_stop_point_transfer = stop_point_idx;
 //               if (v.comp(next, best_labels[destination->idx])) {
 //                   best_labels[destination->idx] = next;
 //               }
                for(const auto jpp : destination->journey_pattern_point_list) {
                    if(best_jpp != jpp && v.comp(jpp->order, Q[jpp->journey_pattern->idx])) {
+                       ++ nb_marked;
                        Q[jpp->journey_pattern->idx] = jpp->order;
                    }
                }
@@ -147,6 +153,7 @@ void RAPTOR::foot_path(const Visitor & v) {
         }
         last = index.first + index.second;
     }
+    std::cout << "foot path| destination: " << nb_destination << " nb_better:" << nb_better <<" nb_marked: " << nb_marked << std::endl;
 }
 
 
@@ -228,8 +235,8 @@ RAPTOR::compute_all(const std::vector<std::pair<type::idx_t, navitia::time_durat
 
     boucleRAPTOR(accessibilite_params, clockwise, disruption_active, false, max_transfers);
     /// @todo put that commented lines in a ifdef only compiled when we want
-    //auto tmp = makePathes(calc_dep, calc_dest, accessibilite_params, *this, clockwise, disruption_active);
-    //result.insert(result.end(), tmp.begin(), tmp.end());
+    auto tmp = makePathes(calc_dep, calc_dest, accessibilite_params, *this, clockwise, disruption_active);
+    result.insert(result.end(), tmp.begin(), tmp.end());
     // No solution found, or the solution has initialize with init
     if(b_dest.best_now_stop_point_idx == type::invalid_idx || b_dest.count == 0) {
         return result;
@@ -251,7 +258,7 @@ RAPTOR::compute_all(const std::vector<std::pair<type::idx_t, navitia::time_durat
         }
         std::vector<Path> temp = makePathes(calc_dest, calc_dep, accessibilite_params, *this, !clockwise, disruption_active);
 
-        using boost::adaptors::filtered;
+        /*using boost::adaptors::filtered;
         boost::push_back(result, temp | filtered([&](const Path& p) {
             // We filter invalid solutions (that will begin before the departure date)
             const auto& end_item = clockwise ? p.items.front() : p.items.back();
@@ -268,7 +275,7 @@ RAPTOR::compute_all(const std::vector<std::pair<type::idx_t, navitia::time_durat
                   <= cur_end
                 : to_posix_time(departure_datetime - walking_time_search->second.total_seconds(), data)
                   >= cur_end;
-        }));
+        }));*/
     }
     BOOST_ASSERT( departures.size() > 0 );    //Assert that reversal search was symetric
     return result;
@@ -450,6 +457,10 @@ void RAPTOR::raptor_loop(Visitor visitor, const type::AccessibiliteParams & acce
         bool global_pruning, uint32_t max_transfers) {
     bool end = false;
     count = 0; //< Count iteration of raptor algorithm
+    size_t nb_jp_explored = 0,
+           nb_jpp_explored = 0,
+           nb_marked = 0,
+           nb_vj_found = 0;
 
     while(!end && count <= max_transfers) {
         ++count;
@@ -466,6 +477,7 @@ void RAPTOR::raptor_loop(Visitor visitor, const type::AccessibiliteParams & acce
         this->make_queue();
 
         for(const auto & journey_pattern : data.pt_data->journey_patterns) {
+            ++ nb_jp_explored;
             if(Q[journey_pattern->idx] != std::numeric_limits<int>::max()
                     && Q[journey_pattern->idx] != -1
                     && valid_journey_patterns.test(journey_pattern->idx)) {
@@ -478,6 +490,7 @@ void RAPTOR::raptor_loop(Visitor visitor, const type::AccessibiliteParams & acce
                                                 journey_pattern,Q[journey_pattern->idx]);
 
                 BOOST_FOREACH(const type::JourneyPatternPoint* jpp, jpp_to_explore) {
+                    ++ nb_jpp_explored;
                     if(!jpp->stop_point->accessible(accessibilite_params.properties)) {
                         continue;
                     }
@@ -505,8 +518,9 @@ void RAPTOR::raptor_loop(Visitor visitor, const type::AccessibiliteParams & acce
                             const bool best_add_result = this->b_dest.add_best(visitor, stop_point_idx, workingDt, this->count);
                             if(visitor.comp(workingDt, bound) || best_add_result ) {
                                 working_labels[stop_point_idx].dt_pt = workingDt;
-                                working_labels[stop_point_idx].st_boarding = boarding;
+                                working_labels[stop_point_idx].boarding_jpp_pt = boarding->journey_pattern_point->idx;
                                 working_labels[stop_point_idx].st = st;
+                                ++nb_marked;
                                 best_labels[stop_point_idx] = working_labels[stop_point_idx].dt_pt;
                                 // We want to apply connection only if it's not a destination point
                                 if(!best_add_result) {
@@ -531,6 +545,7 @@ void RAPTOR::raptor_loop(Visitor visitor, const type::AccessibiliteParams & acce
                                                visitor.clockwise(), disruption_active, data);
 
                         if(tmp_st_dt.first != nullptr && (boarding == nullptr || tmp_st_dt.first != *it_st || tmp_st_dt.second != workingDt)) {
+                            ++ nb_vj_found;
                             it_st = visitor.first_stoptime(tmp_st_dt.first);
                             boarding = *it_st;
                             workingDt = tmp_st_dt.second;
@@ -548,6 +563,8 @@ void RAPTOR::raptor_loop(Visitor visitor, const type::AccessibiliteParams & acce
         }
         this->foot_path(visitor);
     }
+    std::cout << "Count: " << count << " nb_jp_explored: " << nb_jp_explored << " nb_jpp_explored: " 
+              << nb_jpp_explored << "nb_marked: " << nb_marked << " nb_vj_found: " << nb_vj_found << std::endl;
 }
 
 

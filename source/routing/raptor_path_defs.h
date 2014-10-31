@@ -91,13 +91,13 @@ handle_st(const type::StopTime* st, DateTime& workingDate, bool clockwise, const
 
 
 template<typename Visitor>
-void handle_vj(const size_t countb, navitia::type::idx_t current_stop_point_idx, Visitor& v,
-               bool clockwise, bool disruption_active, const type::AccessibiliteParams & accessibilite_params,
+void handle_vj(const size_t countb, type::idx_t current_stop_point_idx, Visitor& v,
+               bool clockwise, bool , const type::AccessibiliteParams & ,
                const RAPTOR &raptor_) {
     v.init_vj();
     auto working_label = raptor_.labels[countb][current_stop_point_idx];
     const type::StopTime* current_st = working_label.st ;
-    auto boarding_jpp_idx = working_label.st_boarding->journey_pattern_point->idx;
+    auto boarding_jpp_idx = working_label.boarding_jpp_pt;
     auto current_journey_pattern_point_idx = current_st->journey_pattern_point->idx;
     DateTime workingDate = working_label.dt_pt;
     // Actually we want to have here the arrival time if we where working on departure_time in raptor
@@ -162,7 +162,8 @@ void read_path(Visitor& v, type::idx_t destination_idx, size_t countb, bool cloc
     type::idx_t current_stop_point_idx = destination_idx;
     while (countb>0) {
         handle_vj(countb, current_stop_point_idx, v, clockwise, disruption_active, accessibilite_params, raptor_);
-        current_stop_point_idx = raptor_.labels[countb][current_stop_point_idx].st_boarding->journey_pattern_point->stop_point->idx;
+        const auto current_jpp_idx = raptor_.labels[countb][current_stop_point_idx].boarding_jpp_pt;
+        current_stop_point_idx = raptor_.data.pt_data->journey_pattern_points[current_jpp_idx]->stop_point->idx;
         --countb;
         v.final_step(current_stop_point_idx, countb, raptor_.labels);
         if (countb == 0) {

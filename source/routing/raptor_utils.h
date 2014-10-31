@@ -40,12 +40,11 @@ namespace navitia { namespace routing {
 struct Label {
     DateTime dt_pt, // At what time can we reach this label with public transport
              dt_transfer; // At what time wan we reach this label with a transfer
-    type::idx_t boarding_stop_point_transfer = type::invalid_idx;
-    const type::StopTime* st = nullptr,
-                  * st_boarding = nullptr;
+    type::idx_t boarding_stop_point_transfer = type::invalid_idx,
+                boarding_jpp_pt = type::invalid_idx;
+    const type::StopTime* st = nullptr;
 
     void init(bool clockwise) {
-        st_boarding = nullptr;
         boarding_stop_point_transfer = type::invalid_idx;
         dt_pt = clockwise ? DateTimeUtils::inf : DateTimeUtils::min;
         dt_transfer = dt_pt;
