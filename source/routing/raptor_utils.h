@@ -81,11 +81,13 @@ inline void memset32(T*buf, uint n, T c)
 struct best_dest {
     std::vector<navitia::time_duration> stop_point_idx_duration;
     DateTime best_now;
-    type::idx_t best_now_stop_point_idx;
-    size_t count;
+    type::idx_t best_now_stop_point_idx = type::invalid_idx;
+    size_t count = std::numeric_limits<size_t>::max();
+    size_t nb_destination_added = 0;
 
     void add_destination(const type::StopPoint* stop_point, const time_duration duration_to_dest) {
         stop_point_idx_duration[stop_point->idx] = duration_to_dest; //AD, check if there are some rounding problems
+        ++ nb_destination_added;
     }
 
 

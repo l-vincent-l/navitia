@@ -47,13 +47,13 @@ get_solutions(const std::vector<std::pair<type::idx_t, navitia::time_duration> >
               accessibilite_params, disruption_active, raptor);
       result.insert(pareto_front.begin(), pareto_front.end());
 
-      //if(!pareto_front.empty()) {
-      //    auto walking_solutions = get_walking_solutions(clockwise, departs, destinations,
-      //            *pareto_front.rbegin(), disruption_active, accessibilite_params, raptor);
-      //    if(!walking_solutions.empty()) {
-      //      result.insert(walking_solutions.begin(), walking_solutions.end());
-      //    }
-      //}
+      /*if(!pareto_front.empty()) {
+          auto walking_solutions = get_walking_solutions(clockwise, departs, destinations,
+                  *pareto_front.rbegin(), disruption_active, accessibilite_params, raptor);
+          if(!walking_solutions.empty()) {
+            result.insert(walking_solutions.begin(), walking_solutions.end());
+          }
+      }*/
       return result;
 }
 

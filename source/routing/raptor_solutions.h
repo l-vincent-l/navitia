@@ -34,6 +34,7 @@ www.navitia.io
 #include "routing.h"
 #include "raptor_utils.h"
 #include "best_stoptime.h"
+#include <iostream>
 
 namespace navitia { namespace routing {
 

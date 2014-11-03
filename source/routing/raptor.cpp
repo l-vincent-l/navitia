@@ -153,7 +153,6 @@ void RAPTOR::foot_path(const Visitor & v) {
         }
         last = index.first + index.second;
     }
-    std::cout << "foot path| destination: " << nb_destination << " nb_better:" << nb_better <<" nb_marked: " << nb_marked << std::endl;
 }
 
 
@@ -170,8 +169,7 @@ void RAPTOR::clear(const bool clockwise, const DateTime bound) {
         std::fill(lbl_list.begin(), lbl_list.end(), l);
     }
 
-    const size_t stop_points_size = data.pt_data->stop_points.size();
-    b_dest.reinit(stop_points_size, bound);
+    b_dest.reinit(data.pt_data->stop_points.size(), bound);
     this->make_queue();
     if(clockwise)
         std::fill(best_labels.begin(), best_labels.end(), DateTimeUtils::inf);
@@ -207,6 +205,7 @@ void RAPTOR::init(Solutions departs,
                 if(valid_journey_patterns.test(journey_pattern_point->journey_pattern->idx) &&
                    valid_journey_pattern_points.test(journey_pattern_point->idx)) {
                     b_dest.add_destination(sp, item.second);
+                    break;
                 }
             }
         }
@@ -232,11 +231,10 @@ RAPTOR::compute_all(const std::vector<std::pair<type::idx_t, navitia::time_durat
     auto departures = get_solutions(calc_dep, departure_datetime, clockwise, data, disruption_active);
     clear(clockwise, bound);
     init(departures, calc_dest, bound, clockwise);
-
     boucleRAPTOR(accessibilite_params, clockwise, disruption_active, false, max_transfers);
     /// @todo put that commented lines in a ifdef only compiled when we want
-    auto tmp = makePathes(calc_dep, calc_dest, accessibilite_params, *this, clockwise, disruption_active);
-    result.insert(result.end(), tmp.begin(), tmp.end());
+    //auto tmp = makePathes(calc_dep, calc_dest, accessibilite_params, *this, clockwise, disruption_active);
+    //result.insert(result.end(), tmp.begin(), tmp.end());
     // No solution found, or the solution has initialize with init
     if(b_dest.best_now_stop_point_idx == type::invalid_idx || b_dest.count == 0) {
         return result;
@@ -248,6 +246,9 @@ RAPTOR::compute_all(const std::vector<std::pair<type::idx_t, navitia::time_durat
     departures = get_solutions(calc_dep, calc_dest, !clockwise,
                                accessibilite_params, disruption_active, *this);
     for(auto departure : departures) {
+        std::cout  << "count: " << departure.count << "arrival: " << departure.arrival << " upper_bound: " <<
+        departure.upper_bound << " total_arrival: " << departure.total_arrival << " ratio: " << departure.ratio
+        << " walking_time: " << departure.walking_time << std::endl;
         clear(!clockwise, departure_datetime);
         init({departure}, calc_dep, departure_datetime, !clockwise);
 
@@ -258,8 +259,9 @@ RAPTOR::compute_all(const std::vector<std::pair<type::idx_t, navitia::time_durat
         }
         std::vector<Path> temp = makePathes(calc_dest, calc_dep, accessibilite_params, *this, !clockwise, disruption_active);
 
-        /*using boost::adaptors::filtered;
+        using boost::adaptors::filtered;
         boost::push_back(result, temp | filtered([&](const Path& p) {
+                    return true;
             // We filter invalid solutions (that will begin before the departure date)
             const auto& end_item = clockwise ? p.items.front() : p.items.back();
             const auto* stop_time = clockwise ? end_item.stop_times.front() : end_item.stop_times.back();
@@ -275,7 +277,7 @@ RAPTOR::compute_all(const std::vector<std::pair<type::idx_t, navitia::time_durat
                   <= cur_end
                 : to_posix_time(departure_datetime - walking_time_search->second.total_seconds(), data)
                   >= cur_end;
-        }));*/
+        }));
     }
     BOOST_ASSERT( departures.size() > 0 );    //Assert that reversal search was symetric
     return result;
@@ -497,7 +499,7 @@ void RAPTOR::raptor_loop(Visitor visitor, const type::AccessibiliteParams & acce
                     if(!valid_journey_pattern_points.test(jpp->idx)) {
                         continue;
                     }
-                    type::idx_t stop_point_idx = jpp->stop_point->idx;
+                    const type::idx_t stop_point_idx = jpp->stop_point->idx;
                     if(boarding != nullptr) {
                         ++it_st;
                         // We update workingDt with the new arrival time
