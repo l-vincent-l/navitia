@@ -202,3 +202,24 @@ bool StopTime::operator<(const StopTime& other) const {
         return *(this->vehicle_journey) < *(other.vehicle_journey);
     }
 }
+
+void Calendar::build_validity_pattern(boost::gregorian::date_period production_period) {
+    //initialisation of the validity pattern from the active periods and the exceptions
+    for (boost::gregorian::date_period period : this->active_periods) {
+        auto intersection_period = production_period.intersection(period);
+        if (intersection_period.is_null()) {
+            continue;
+        }
+        validity_pattern.add(intersection_period.begin(), intersection_period.end(), week_pattern);
+    }
+    for (auto : this->exceptions) {
+        if (!production_period.contains(exd.date)) {
+            continue;
+        }
+        if (exd.type == ExceptionDate::ExceptionType::sub) {
+            validity_pattern.remove(exd.date);
+        } else if (exd.type == ExceptionDate::ExceptionType::add) {
+            validity_pattern.add(exd.date);
+        }
+    }
+}

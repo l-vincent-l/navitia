@@ -166,6 +166,9 @@ public:
 
     types::ValidityPattern* get_or_create_validity_pattern(const types::ValidityPattern& vp);
 
+    void build_grid_validity_pattern();
+    void build_associated_calendar();
+
     ~Data(){
 #define DELETE_ALL_ELEMENTS(type_name, collection_name) for(auto element : collection_name) delete element;
         ITERATE_NAVITIA_PT_TYPES(DELETE_ALL_ELEMENTS)
@@ -177,7 +180,7 @@ public:
 };
 
 
-struct Georef{
+struct Georef {
     std::unordered_map<std::string, types::Node* > nodes;
     std::unordered_map<std::string, types::Edge* > edges;
     std::unordered_map<std::string, types::Way* > ways;

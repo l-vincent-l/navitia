@@ -48,15 +48,16 @@ def run_migrations_online():
     # An UGGLY fix is below, we explictly change the default schema to public
     # We need to create again the engine afterward since the alembic_version table is 
     # searched at the creation
-    engine = make_engine()
-    r = engine.execute("set search_path to 'public'") 
-    r.close()
-    engine.dispose()
+   # engine = make_engine()
+   # r = engine.execute("set search_path to public") 
+   # r.close()
+   # engine.dispose()
 
     engine = make_engine() # second creation with the right default schema
 
     connection = engine.connect()
     try:
+        connection.execute('set search_path to navitia, georef, realtime, public')
         context.configure(
                 connection=connection,
                 target_metadata=target_metadata,
@@ -66,6 +67,7 @@ def run_migrations_online():
                 )
 
         with context.begin_transaction():
+            connection.execute("set search_path to public;")
             context.run_migrations()
     finally:
         connection.close()

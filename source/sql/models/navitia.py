@@ -92,6 +92,13 @@ rel_metavj_vj = Table('rel_metavj_vj', metadata,*[
     ForeignKeyConstraint(['meta_vj'], [u'navitia.meta_vj.id'], name=u'rel_metavj_vj_meta_vj_fkey'),],
     schema='navitia')
 
+rel_metavj_vj = Table('rel_metavj_calendar', metadata,*[
+    Column('meta_vj', BIGINT(), primary_key=False),
+    Column('calendar', BIGINT(), primary_key=False),
+    ForeignKeyConstraint(['meta_vj'], [u'navitia.meta_vj.id'], name=u'rel_metavj_vj_meta_vj_fkey'),
+    ForeignKeyConstraint(['calendar'], [u'navitia.calendar.id'], name=u'rel_metavj_meta_vj_calendar_fkey')],
+    schema='navitia')
+
 
 rel_line_company = Table('rel_line_company', metadata,*[
     Column('line_id', BIGINT(), primary_key=True, nullable=False),

@@ -791,6 +791,7 @@ struct AssociatedCalendar {
         ar & calendar & exceptions;
     }
 };
+
 struct MetaVehicleJourney;
 
 
@@ -961,8 +962,6 @@ struct Calendar : public Nameable, public Header, public Codes {
     Calendar() {}
     Calendar(boost::gregorian::date beginning_date);
 
-    //we limit the validity pattern to the production period
-    void build_validity_pattern(boost::gregorian::date_period production_period);
 
 
     bool operator<(const Calendar & other) const { return this < &other; }

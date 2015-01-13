@@ -87,6 +87,9 @@ struct Calendar : public Nameable, public Header {
 
     Calendar() {}
 
+    //we limit the validity pattern to the production period
+    void build_validity_pattern(boost::gregorian::date_period production_period);
+
     bool operator<(const Calendar & other) const { return this < &other; }
 };
 

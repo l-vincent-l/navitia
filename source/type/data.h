@@ -172,11 +172,7 @@ public:
     /** Construit les données raptor */
     void build_raptor();
 
-    void build_associated_calendar();
-
     void aggregate_odt();
-
-    void build_grid_validity_pattern();
 
     void complete();
 

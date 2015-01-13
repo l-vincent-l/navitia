@@ -210,7 +210,91 @@ void Data::shift_stop_times() {
 }
 
 
-void Data::complete(){
+void Data::build_grid_validity_pattern() {
+    for(auto cal : this->calendars) {
+        cal->build_validity_pattern(meta.production_date);
+    }
+}
+
+void Data::build_associated_calendar() {
+    auto log = log4cplus::Logger::getInstance("kraken::type::Data");
+    std::multimap<types::ValidityPattern, types::AssociatedCalendar*> associated_vp;
+    size_t nb_not_matched_vj(0);
+    size_t nb_matched(0);
+    for(auto meta_vj_pair : this->pt_data->meta_vj) {
+        auto meta_vj = meta_vj_pair.second;
+
+        assert (! meta_vj->theoric_vj.empty());
+
+        // we check the theoric vj of a meta vj
+        // because we start from the postulate that the theoric VJs are the same VJ
+        // split because of dst (day saving time)
+        // because of that we try to match the calendar with the union of all theoric vj validity pattern
+        ValidityPattern meta_vj_validity_pattern = get_union_validity_pattern(meta_vj);
+
+        //some check can be done on any theoric vj, we do them on the first
+        auto* first_vj = meta_vj->theoric_vj.front();
+        const std::vector<Calendar*> calendar_list = first_vj->journey_pattern->route->line->calendar_list;
+        if (calendar_list.empty()) {
+            LOG4CPLUS_TRACE(log, "the line of the vj " << first_vj->uri << " is associated to no calendar");
+            nb_not_matched_vj++;
+            continue;
+        }
+
+        //we check if we already computed the associated val for this validity pattern
+        //since a validity pattern can be shared by many vj
+        auto it = associated_vp.find(meta_vj_validity_pattern);
+        if (it != associated_vp.end()) {
+            for (; it->first == meta_vj_validity_pattern; ++it) {
+                meta_vj->associated_calendars.insert({it->second->calendar->uri, it->second});
+            }
+            continue;
+        }
+
+        auto close_cal = find_matching_calendar(*this, meta_vj_pair.first, meta_vj_validity_pattern, calendar_list);
+
+        if (close_cal.empty()) {
+            LOG4CPLUS_TRACE(log, "the meta vj " << meta_vj_pair.first << " has been attached to no calendar");
+            nb_not_matched_vj++;
+            continue;
+        }
+        nb_matched++;
+
+        std::stringstream cal_uri;
+        for (auto cal_bit_set: close_cal) {
+            auto associated_calendar = new AssociatedCalendar();
+            pt_data->associated_calendars.push_back(associated_calendar);
+
+            associated_calendar->calendar = cal_bit_set.first;
+            //we need to create the associated exceptions
+            for (size_t i = 0; i < cal_bit_set.second.size(); ++i) {
+                if (! cal_bit_set.second[i]) {
+                    continue; //cal_bit_set.second is the resulting differences, so 0 means no exception
+                }
+                ExceptionDate ex;
+                ex.date = meta_vj_validity_pattern.beginning_date + boost::gregorian::days(i);
+                //if the vj is active this day it's an addition, else a removal
+                ex.type = (meta_vj_validity_pattern.days[i] ? ExceptionDate::ExceptionType::add : ExceptionDate::ExceptionType::sub);
+                associated_calendar->exceptions.push_back(ex);
+            }
+
+            meta_vj->associated_calendars.insert({associated_calendar->calendar->uri, associated_calendar});
+            associated_vp.insert({meta_vj_validity_pattern, associated_calendar});
+            cal_uri << associated_calendar->calendar->uri << " ";
+        }
+
+        LOG4CPLUS_DEBUG(log, "the meta vj " << meta_vj_pair.first << " has been attached to " << cal_uri.str());
+    }
+
+    LOG4CPLUS_INFO(log, nb_matched << " vehicle journeys have been matched to at least one calendar");
+    if (nb_not_matched_vj) {
+        LOG4CPLUS_WARN(log, "no calendar found for " << nb_not_matched_vj << " vehicle journey");
+    }
+}
+
+void Data::complete() {
+    build_grid_validity_pattern();
+    build_associated_calendar();
     shift_stop_times();
     build_journey_patterns();
     build_journey_pattern_points();
