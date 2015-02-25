@@ -1066,7 +1066,7 @@ Gestion des paramètres de rabattement
 struct StreetNetworkParams{
     Mode_e mode;
     idx_t offset;
-    float speed_factor;
+    double speed_factor;
     navitia::time_duration max_duration;
     Type_e type_filter; // filtre sur le départ/arrivée : exemple les arrêts les plus proches à une site type
     std::string uri_filter; // l'uri de l'objet

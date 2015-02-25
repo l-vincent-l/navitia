@@ -158,7 +158,7 @@ Path StreetNetwork::get_direct_path(const type::EntryPoint& origin,
     if (min_dist == bt::pos_infin)
         return {};
 
-    Path result = combine_path(target, departure_path_finder.predecessors, arrival_path_finder.predecessors);
+    Path result = combine_path(target, departure_path_finder.predecessors, arrival_path_finder.predecessors, departure_path_finder.speed_factor);
     departure_path_finder.add_projections_to_path(result, true);
     arrival_path_finder.add_projections_to_path(result, false);
 
@@ -470,7 +470,7 @@ Path PathFinder::build_path(vertex_t best_destination) const {
 }
 
 
-Path create_path(const GeoRef& geo_ref, std::vector<vertex_t> reverse_path, bool add_one_elt) {
+Path create_path(const GeoRef& geo_ref, std::vector<vertex_t> reverse_path, bool add_one_elt, float speed_factor) {
     Path p;
 
     // On reparcourt tout dans le bon ordre
@@ -512,8 +512,9 @@ Path create_path(const GeoRef& geo_ref, std::vector<vertex_t> reverse_path, bool
         last_transport_carac = transport_carac;
         path_item.way_idx = edge.way_idx;
         path_item.transportation = transport_carac;
-        path_item.duration += edge.duration;
-        p.duration += edge.duration;
+        auto computed_duration = edge.duration / speed_factor;
+        path_item.duration += computed_duration;
+        p.duration += computed_duration;
         if (path_item_changed) {
             //we update the last path item
             path_item.angle = compute_directions(p, coord);
@@ -528,7 +529,7 @@ Path create_path(const GeoRef& geo_ref, std::vector<vertex_t> reverse_path, bool
 }
 
 
-Path StreetNetwork::combine_path(const vertex_t best_destination, std::vector<vertex_t> preds, std::vector<vertex_t> successors) const {
+Path StreetNetwork::combine_path(const vertex_t best_destination, std::vector<vertex_t> preds, std::vector<vertex_t> successors, float speed_factor) const {
     //used for the direct path, we need to reverse the second part and concatenate the 2 'predecessors' list
     //to get the path
     std::vector<vertex_t> reverse_path;
@@ -542,7 +543,7 @@ Path StreetNetwork::combine_path(const vertex_t best_destination, std::vector<ve
     std::reverse(reverse_path.begin(), reverse_path.end());
 
     if (best_destination == preds[best_destination])
-        return create_path(geo_ref, reverse_path, false);
+        return create_path(geo_ref, reverse_path, false, speed_factor);
 
     current = preds[best_destination]; //we skip the middle point since it has already been added
     while (current != preds[current]) {
@@ -551,7 +552,7 @@ Path StreetNetwork::combine_path(const vertex_t best_destination, std::vector<ve
     }
     reverse_path.push_back(current);
 
-    return create_path(geo_ref, reverse_path, false);
+    return create_path(geo_ref, reverse_path, false, speed_factor);
 }
 
 /**

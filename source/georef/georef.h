@@ -176,13 +176,16 @@ struct PathItem {
     };
     TransportCaracteristic transportation = TransportCaracteristic::Walk;
 
-    double get_length() const;
+    double get_length(double speed_factor = 1.0) const;
 };
 
 /** Itinéraire complet */
 struct Path {
     navitia::time_duration duration = {}; //< Longueur totale du parcours
     std::deque<PathItem> path_items = {}; //< Liste des voies parcourues
+    double get_length(double speed_factor = 1.0) const {
+        return duration.total_milliseconds() * speed_factor / 1000;
+    }
 };
 
 struct ProjectionData;

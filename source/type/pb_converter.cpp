@@ -915,8 +915,10 @@ get_nearest_bss_station(const navitia::type::Data& data, const nt::GeographicalC
 }
 
 static void finalize_section(pbnavitia::Section* section,
+                             const navitia::georef::Path& path,
                              const navitia::georef::PathItem& last_item,
                              const navitia::georef::PathItem& item,
+                             const double speed_factor,
                              const navitia::type::Data& data,
                              const boost::posix_time::ptime departure,
                              int depth,
@@ -932,11 +934,11 @@ static void finalize_section(pbnavitia::Section* section,
     }
     section->mutable_street_network()->set_duration(total_duration);
     section->mutable_street_network()->set_length(total_length);
-    section->set_duration(total_duration);
-    section->set_length(total_length);
+    section->set_duration(path.duration.total_seconds() );
+    section->set_length(path.get_length(speed_factor));
 
     section->set_begin_date_time(navitia::to_posix_timestamp(departure));
-    section->set_end_date_time(navitia::to_posix_timestamp(departure + bt::seconds(total_duration)));
+    section->set_end_date_time(navitia::to_posix_timestamp(departure + bt::seconds(path.duration.total_seconds())));
 
     //add the destination as a placemark
     pbnavitia::PtObject* dest_place = section->mutable_destination();
@@ -1129,7 +1131,8 @@ void fill_street_sections(EnhancedResponse& response, const type::EntryPoint& or
 
         if (last_transportation_carac && transport_carac != *last_transportation_carac) {
             //we end the last section
-            finalize_section(section, last_item, item, data, session_departure, depth, now, action_period);
+            finalize_section(section, path, last_item, item, ori_dest.streetnetwork_params.speed_factor,
+                             data, session_departure, depth, now, action_period);
             session_departure += bt::seconds(section->duration());
 
             //and be create a new one
@@ -1142,7 +1145,8 @@ void fill_street_sections(EnhancedResponse& response, const type::EntryPoint& or
         last_item = item;
     }
 
-    finalize_section(section, path.path_items.back(), {}, data, session_departure, depth, now, action_period);
+    finalize_section(section, path, path.path_items.back(), {}, ori_dest.streetnetwork_params.speed_factor,
+                     data, session_departure, depth, now, action_period);
 }
 
 
@@ -1153,8 +1157,8 @@ void add_path_item(pbnavitia::StreetNetwork* sn, const navitia::georef::PathItem
 
     pbnavitia::PathItem* path_item = sn->add_path_items();
     path_item->set_name(data.geo_ref->ways[item.way_idx]->name);
-    path_item->set_length(item.get_length());
-    path_item->set_duration(item.duration.total_seconds() / ori_dest.streetnetwork_params.speed_factor);
+    path_item->set_length(item.get_length(ori_dest.streetnetwork_params.speed_factor));
+    path_item->set_duration(item.duration.total_seconds() /*/ ori_dest.streetnetwork_params.speed_factor*/);
     path_item->set_direction(item.angle);
 
     //we add each path item coordinate to the global coordinate list

@@ -214,11 +214,11 @@ struct StreetNetwork {
 
 private:
     /// Combine 2 pathes
-    Path combine_path(const vertex_t best_destination, std::vector<vertex_t> preds, std::vector<vertex_t> successors) const;
+    Path combine_path(const vertex_t best_destination, std::vector<vertex_t> preds, std::vector<vertex_t> successors, float speed_factor=1.0) const;
 };
 
 /// Build a path from a reverse path list
-Path create_path(const GeoRef& georef, std::vector<vertex_t> reverse_path, bool add_one_elt);
+Path create_path(const GeoRef& georef, std::vector<vertex_t> reverse_path, bool add_one_elt, float speed_factor = 1.0);
 
 /// Compute the angle between the last segment of the path and the next point
 int compute_directions(const navitia::georef::Path& path, const nt::GeographicalCoord& c_coord);
