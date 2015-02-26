@@ -924,21 +924,13 @@ static void finalize_section(pbnavitia::Section* section,
                              int depth,
                              const pt::ptime& now,
                              const pt::time_period& action_period) {
-
-    double total_duration = 0;
-    double total_length = 0;
-    for (int pb_item_idx = 0 ; pb_item_idx < section->mutable_street_network()->path_items_size() ; ++pb_item_idx) {
-        const pbnavitia::PathItem& pb_item = section->mutable_street_network()->path_items(pb_item_idx);
-        total_length += pb_item.length();
-        total_duration += pb_item.duration();
-    }
-    section->mutable_street_network()->set_duration(total_duration);
-    section->mutable_street_network()->set_length(total_length);
-    section->set_duration(path.duration.total_seconds() );
-    section->set_length(path.get_length(speed_factor));
+    section->mutable_street_network()->set_duration(path.duration.total_seconds());
+    section->mutable_street_network()->set_length(uint32_t(path.get_length(speed_factor)));
+    section->set_duration(section->street_network().duration());
+    section->set_length(section->street_network().length());
 
     section->set_begin_date_time(navitia::to_posix_timestamp(departure));
-    section->set_end_date_time(navitia::to_posix_timestamp(departure + bt::seconds(path.duration.total_seconds())));
+    section->set_end_date_time(navitia::to_posix_timestamp(departure + bt::seconds(section->duration())));
 
     //add the destination as a placemark
     pbnavitia::PtObject* dest_place = section->mutable_destination();
